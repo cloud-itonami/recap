@@ -1,3 +1,24 @@
+// SVELTEKIT-BACKEND-PRESERVED: moved out of svelte/ during the cljs migration; not wired.
+// Original path: svelte/src/routes/xrpc/[...path]/+server.ts
+// This is a SvelteKit RequestHandler (imports from '@sveltejs/kit' and
+// './$types') and will NOT run as-is now that the SvelteKit build (svelte/)
+// is gone from this repo -- there is no SvelteKit adapter left to generate
+// the './$types' module or to route requests into this handler.
+//
+// It proxies XRPC calls to an MCP router (AGENTGATEWAY_MCP_ROUTER_URL /
+// MCP_ROUTER_URL, default https://mcp.etzhayyim.com/xrpc/com.etzhayyim.mcp.message)
+// using JSON-RPC 2.0 tools/call. src/app.ts (this repo's kotodama-host-SDK
+// edge) is NOT a byte-for-byte duplicate of this: it forwards to a
+// different upstream (DISPATCHER_URL, default https://dispatcher.etzhayyim.com)
+// with a different, non-JSON-RPC wire shape. See test/contract_test.cljs,
+// check "the-declared-edge-and-the-built-edge-target-different-hosts",
+// which pins this as a DISAGREEMENT between the two planes, not an
+// agreement. Whether to revive this handler (e.g. as a plain Worker route,
+// wired into src/app.ts, or retired outright) is an undecided product
+// question -- this migration only relocates the file so it is not lost
+// when svelte/ is deleted; it does not decide that question.
+//
+// Below this line: byte-identical to the original file.
 import { json, type RequestEvent } from '@sveltejs/kit';
 import type { RequestHandler } from './$types';
 

@@ -12,13 +12,28 @@
 ;;   lg-clj/src/lg_recap/server.cljc         NSID-MAP + GRAPHS registry
 ;;   kotodama.jsonld                         actor manifest (nanoid, triggers)
 ;;   wrangler.jsonc                          deployment (name, vars, routes)
-;;   svelte/src/routes/xrpc/[...path]/       the entry that is actually built
+;;   src/xrpc-proxy.ts                       preserved SvelteKit BFF, not wired
 ;;
 ;; `lg-clj/test/lg_recap/smoke_test.cljc` is a good suite, but it can only see
 ;; the Clojure plane: it asserts NSID-MAP against a copy of NSID-MAP written in
 ;; the same file. Nothing in this repo reads two planes together. The facts
 ;; below are *between* planes, so they belong to none of them — which is why
-;; this file is at the root rather than under lg-clj/ or svelte/.
+;; this file is at the root rather than under lg-clj/ or cljs/.
+;;
+;; ## 2026-09-07: the fifth plane stopped being served
+;;
+;; This app's front end moved from `svelte/` (SvelteKit) to `cljs/`
+;; (shadow-cljs + reagent + re-frame). `svelte/src/routes/xrpc/[...path]/
+;; +server.ts` was preserved — not deleted — at `src/xrpc-proxy.ts`, because
+;; deleting it would have thrown away a production handler with no
+;; replacement decided. It is no longer built by anything (there is no
+;; SvelteKit adapter left in this repo, and `cljs/` does not build it
+;; either), so the checks below that used to read "the entry the build
+;; actually produces" now read a preserved-but-unwired file instead. The
+;; textual facts inside it (which upstream it calls, whether it enforces an
+;; NSID allowlist) have not changed, so those checks are pinned as before;
+;; the checks that talked about what wrangler *deploys* were updated instead
+;; — see `wrangler-has-no-main-so-assets-are-served-directly` below.
 ;;
 ;; These checks read source text and do not execute anything. A route table, an
 ;; NSID literal, a nanoid and an env var name are textual facts, and their
@@ -190,9 +205,15 @@
 (def wrangler-hosts
   (set (keep #(first (str/split (or (get % "pattern") "") #"/")) (get wrangler "routes"))))
 
-;; ── plane 5: the SvelteKit BFF — the entry the build actually produces ──────
+;; ── plane 5: the preserved SvelteKit BFF — moved, not wired ─────────────────
+;;
+;; Was svelte/src/routes/xrpc/[...path]/+server.ts, "the entry the build
+;; actually produces", before the 2026-09-07 cljs migration deleted svelte/.
+;; Preserved byte-for-byte (past a prepended header comment) at this path so
+;; the handler was not lost; nothing in this repo builds or serves it now
+;; (see the header comment above).
 
-(def bff-rel "svelte/src/routes/xrpc/[...path]/+server.ts")
+(def bff-rel "src/xrpc-proxy.ts")
 (def bff (read-source bff-rel))
 (def bff-default-router
   (one bff (str bff-rel " DEFAULT_MCP_ROUTER_URL")
@@ -257,41 +278,54 @@
                  (catch :default _ :unparseable))
             "APP_CAPABILITIES (a JSON string inside JSON)"))
 
-  ;; --- DISAGREEMENT: the four commands in src/app.ts are not deployed.
-  ;; wrangler `main` is the SvelteKit adapter output, and no build config in
-  ;; this repo mentions src/app.ts. It is a plane left behind by the extraction
-  ;; from etzhayyim/root — reading it as "the edge" is reading dead source.
-  (when wrangler-main
-    (let [configs ["wrangler.jsonc" "svelte/vite.config.ts" "svelte/svelte.config.js"
-                   "svelte/package.json" "svelte/tsconfig.json"]
-          seen (keep (fn [rel]
-                       (let [p (path/join root rel)]
-                         (when (and (fs/existsSync p)
-                                    (str/includes? (str (fs/readFileSync p "utf8")) "src/app"))
-                           rel)))
-                     configs)]
-      (check "src-app-ts-is-built-by-nothing"
-             (and (empty? seen) (not (str/includes? wrangler-main "src/app")))
-             (if (and (empty? seen) (not (str/includes? wrangler-main "src/app")))
-               (str "wrangler main = " (pr-str wrangler-main) " and none of "
-                    (count configs) " build configs mentions src/app — so the "
-                    (count (or edge-nsids [])) " commands registered there are declared, not served")
-               (str "src/app.ts is now referenced by " (show (vec seen))
-                    " / main=" (pr-str wrangler-main)
-                    " — the orphan plane has been wired in; re-read who serves the NSIDs")))
-      (check "wrangler-main-and-assets-share-the-adapter-output"
-             (and (str/starts-with? wrangler-main "svelte/.svelte-kit/cloudflare/")
-                  (str/includes? (or (get-in wrangler ["assets" "directory"]) "")
-                                 "svelte/.svelte-kit/cloudflare/"))
-             (str "main = " (pr-str wrangler-main)
-                  " / assets.directory = " (pr-str (get-in wrangler ["assets" "directory"]))))))
+  ;; --- DISAGREEMENT (true both before and after 2026-09-07): the four
+  ;; commands in src/app.ts are not deployed. Before the cljs migration
+  ;; `wrangler main` was the SvelteKit adapter output; after it there is no
+  ;; `main` at all (deployment is asset-only — see the next check). Either
+  ;; way, no build config in this repo mentions src/app.ts. It is a plane
+  ;; left behind by the extraction from etzhayyim/root — reading it as "the
+  ;; edge" is reading dead source.
+  (let [configs ["wrangler.jsonc" "cljs/shadow-cljs.edn" "cljs/package.json"]
+        seen (keep (fn [rel]
+                     (let [p (path/join root rel)]
+                       (when (and (fs/existsSync p)
+                                  (str/includes? (str (fs/readFileSync p "utf8")) "src/app"))
+                         rel)))
+                   configs)]
+    (check "src-app-ts-is-built-by-nothing"
+           (empty? seen)
+           (if (empty? seen)
+             (str "none of " (count configs) " build configs mentions src/app — so the "
+                  (count (or edge-nsids [])) " commands registered there are declared, not served")
+             (str "src/app.ts is now referenced by " (show (vec seen))
+                  " — the orphan plane has been wired in; re-read who serves the NSIDs"))))
+
+  ;; --- agreement: wrangler has no `main` script, so `assets.directory` is
+  ;; served directly with nothing in front of it. Before 2026-09-07 this was
+  ;; pinned the other way (`main` == the SvelteKit adapter output and
+  ;; `assets.directory` == that same adapter's client dir — a check that a
+  ;; `main` script and its assets agreed on which build produced them). The
+  ;; cljs migration removed `main` outright rather than repointing it at
+  ;; src/app.ts, specifically because src/app.ts never calls
+  ;; `env.ASSETS.fetch()` — a worker script in front of assets that does not
+  ;; forward to them would swallow every static request. If `main`
+  ;; reappears, re-read whether it forwards to ASSETS before trusting static
+  ;; content is still served.
+  (when wrangler
+    (check "wrangler-has-no-main-so-assets-are-served-directly"
+           (and (nil? wrangler-main)
+                (= "./cljs/public" (get-in wrangler ["assets" "directory"])))
+           (str "main = " (pr-str wrangler-main)
+                " / assets.directory = " (pr-str (get-in wrangler ["assets" "directory"])))))
 
   ;; --- DISAGREEMENT: the two planes forward to different upstreams.
-  ;; src/app.ts proxies to the lg dispatcher; the built BFF calls the MCP
-  ;; router. They are not two routes to one service — they are two services.
+  ;; src/app.ts proxies to the lg dispatcher; the preserved (unwired) BFF
+  ;; calls the MCP router. They are not two routes to one service — they are
+  ;; two services, and neither upstream changed when the BFF moved out of
+  ;; svelte/.
   (when (and edge-upstream bff-default-router)
     (let [host #(second (re-find #"https://([^/]+)" %))]
-      (check "the-declared-edge-and-the-built-edge-target-different-hosts"
+      (check "the-declared-edge-and-the-preserved-edge-target-different-hosts"
              (not= (host edge-upstream) (host bff-default-router))
              (str "src/app.ts → " (pr-str (host edge-upstream))
                   " ; " bff-rel " → " (pr-str (host bff-default-router))
@@ -305,16 +339,21 @@
             (get wrangler-vars "AGENTGATEWAY_MCP_ROUTER_URL") bff-default-router
             "MCP router URL, written out in both files"))
 
-  ;; --- DISAGREEMENT: the deployed path has no NSID allowlist.
-  ;; `[...path]` is forwarded verbatim as an MCP `tools/call` name, so the four
-  ;; NSIDs this repo declares constrain nothing at the edge that is live.
+  ;; --- fact about the preserved file, not a claim about live traffic: the
+  ;; unwired BFF has no NSID allowlist. Before 2026-09-07 this was live and
+  ;; the message said the edge it described was live; after the cljs
+  ;; migration nothing routes traffic through src/xrpc-proxy.ts at all, so
+  ;; the same textual fact (no allowlist) is pinned without claiming it is
+  ;; reachable. `[...path]` is forwarded verbatim as an MCP `tools/call` name
+  ;; in the preserved source — if this file is ever revived, that absence is
+  ;; what needs deciding first.
   (when bff
     (let [n (count (re-seq #"com\.etzhayyim\.apps\.recap\." bff))]
-      (check "deployed-xrpc-route-names-no-recap-nsid"
+      (check "preserved-xrpc-proxy-has-no-recap-nsid-allowlist"
              (zero? n)
              (if (zero? n)
                (str bff-rel " forwards event.params.path unchanged as the MCP tool name"
-                    " — no allowlist, so recap's 4 NSIDs are not enforced where traffic lands")
+                    " — no allowlist in the preserved (unwired) source")
                (str bff-rel " now mentions " n " recap NSID literal(s)"
                     " — an allowlist may have appeared; re-read it"))))))
 

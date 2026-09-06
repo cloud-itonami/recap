@@ -12,9 +12,10 @@ summarize) wired through `lg-recap.server` dispatch. The smoke suite exercises
 graph wiring and pure helpers **without** live yt-dlp, B2 upload, or an LLM —
 credentials and network are not required for the path documented here.
 
-What is **not** verified by this quickstart: deploying the Svelte UI, running
-the Cloudflare Worker (`wrangler.jsonc`), or end-to-end download against a real
-URL. Those need operator credentials and are out of scope for a no-network gate.
+What is **not** verified by this quickstart: deploying the cljs UI (`cljs/`,
+migrated off Svelte), running the Cloudflare Worker config (`wrangler.jsonc`),
+or end-to-end download against a real URL. Those need operator credentials and
+are out of scope for a no-network gate.
 
 ## Prerequisites
 

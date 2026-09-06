@@ -1,0 +1,17 @@
+{
+  "name": "recap-frontend",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "watch": "shadow-cljs watch app",
+    "build": "shadow-cljs compile app",
+    "test": "shadow-cljs compile test && node out/tests.js"
+  },
+  "dependencies": {
+    "react": "^18.2.0",
+    "react-dom": "^18.2.0"
+  },
+  "devDependencies": {
+    "shadow-cljs": "2.28.20"
+  }
+}

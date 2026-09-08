@@ -13,7 +13,7 @@
   is allowed by the repo clj/bb rule). Tests rebind it to a stub so the graph
   topology + validation logic verify offline under bb."
   (:require #?(:clj [cheshire.core :as json])
-            [clojure.string :as str]
+            [kotoba.lang.text :as str]
             [langgraph.graph :as g]))
 
 (def allowed-platforms
@@ -26,8 +26,8 @@
   [url]
   (let [[_ scheme authority] (or (re-find #"^([A-Za-z][A-Za-z0-9+.\-]*)://([^/?#]+)" (str url))
                                  [nil nil nil])
-        host (some-> authority str/lower-case (str/split #":" 2) first)
-        web? (contains? #{"http" "https"} (some-> scheme str/lower-case))
+        host (some-> authority str/lower (str/split #":" 2) first)
+        web? (contains? #{"http" "https"} (some-> scheme str/lower))
         domain? (fn [& domains]
                   (and web? host
                        (some #(or (= host %) (str/ends-with? host (str "." %))) domains)))]

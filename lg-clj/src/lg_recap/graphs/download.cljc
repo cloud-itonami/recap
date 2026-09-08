@@ -23,7 +23,7 @@
   is faithful while the persistence backend can be swapped to kotoba without
   touching the topology."
   (:require #?(:clj [cheshire.core :as json])
-            [clojure.string :as str]
+            [kotoba.lang.text :as str]
             [langgraph.graph :as g]
             [lg-recap.graphs.get-info :as gi]))
 

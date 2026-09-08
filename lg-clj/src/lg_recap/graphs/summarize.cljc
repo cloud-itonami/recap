@@ -18,7 +18,7 @@
     *llm-chat*         (system user) → summary string | {:error \"...\"}
     *write-record*     (record-map)  → {:summary_uri <vertex-id>} | {:error ..} | {}"
   (:require #?(:clj [cheshire.core :as json])
-            [clojure.string :as str]
+            [kotoba.lang.text :as str]
             [langgraph.graph :as g]
             [lg-recap.graphs.get-info :as gi]))
 
@@ -69,8 +69,8 @@
   [endpoint]
   (let [[_ scheme host] (or (re-find #"^([A-Za-z][A-Za-z0-9+.\-]*)://([^/?#]*)" (str endpoint))
                             [nil nil nil])]
-    (when-not (and (= "http" (some-> scheme str/lower-case))
-                   (contains? murakumo-allowed-hosts (some-> host str/lower-case)))
+    (when-not (and (= "http" (some-> scheme str/lower))
+                   (contains? murakumo-allowed-hosts (some-> host str/lower)))
       (throw (ex-info (str "inference endpoint " (pr-str endpoint)
                            " is outside the Murakumo fleet (ADR-2605215000)")
                       {:murakumo-only-violation true :endpoint endpoint})))))

@@ -10,7 +10,7 @@
 // using JSON-RPC 2.0 tools/call. src/app.ts (this repo's kotodama-host-SDK
 // edge) is NOT a byte-for-byte duplicate of this: it forwards to a
 // different upstream (DISPATCHER_URL, default https://dispatcher.etzhayyim.com)
-// with a different, non-JSON-RPC wire shape. See test/contract_test.cljs,
+// with a different, non-JSON-RPC wire shape. See test/contract_test.kotoba,
 // check "the-declared-edge-and-the-built-edge-target-different-hosts",
 // which pins this as a DISAGREEMENT between the two planes, not an
 // agreement. Whether to revive this handler (e.g. as a plain Worker route,

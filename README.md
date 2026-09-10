@@ -16,7 +16,7 @@ steps that were actually executed are in `docs/operator-quickstart.md`.
 |---|---|
 | `lg-clj/` | LangGraph graphs + `lg-recap.server` dispatch (babashka test suite) |
 | `cljs/` | Front-end (shadow-cljs + reagent + re-frame + jp-go-dds); build output is `cljs/public` |
-| `src/app.ts` | kotodama-host-SDK command surface — **declared, not built**: no build config references it (`test/contract_test.cljs` pins this) |
+| `src/app.ts` | kotodama-host-SDK command surface — **declared, not built**: no build config references it (`test/contract_test.kotoba` pins this) |
 | `src/xrpc-proxy.ts` | SvelteKit `+server.ts` preserved byte-for-byte from the retired `svelte/` dir — **not wired**, will not run as-is (see file header) |
 | `wrangler.jsonc` | Cloudflare deployment config — no `main` script; `assets.directory` serves the static `cljs/public` build directly |
 | `test/` | cross-plane contract checks (nbb, no deps) |
@@ -26,11 +26,11 @@ steps that were actually executed are in `docs/operator-quickstart.md`.
 Two suites, and they see different things.
 
 ```bash
-nbb test/contract_test.cljs   # the five planes, checked against each other
+nbb test/contract_test.kotoba   # the five planes, checked against each other
 cd lg-clj && bb test          # the graph registry and dispatch, under stubs
 ```
 
-`test/contract_test.cljs` is at the root because the facts it checks are
+`test/contract_test.kotoba` is at the root because the facts it checks are
 *between* the planes listed above — which XRPC methods exist, which upstream
 serves them, what this app is called. Each of those is written by hand in more
 than one file and derived by nothing, so they drift silently. Some of its

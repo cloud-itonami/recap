@@ -27,7 +27,7 @@ Two suites, and they see different things.
 
 ```bash
 nbb test/contract_test.kotoba   # the five planes, checked against each other
-cd lg-clj && bb test          # the graph registry and dispatch, under stubs
+cd lg-clj && kbb -M:test          # the graph registry and dispatch, under stubs
 ```
 
 `test/contract_test.kotoba` is at the root because the facts it checks are
@@ -48,7 +48,7 @@ looks like "clean". It needs only nbb and the checkout.
 ```bash
 cd cljs
 npm install
-npx shadow-cljs compile app     # -> cljs/public/js/
+amu compile --target wasm32-browser app     # -> cljs/public/js/
 ```
 
 Output is a single-page static build (`cljs/public/index.html` + `js/`) —

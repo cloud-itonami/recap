@@ -1,4 +1,4 @@
-#!/usr/bin/env nbb
+#!/usr/bin/env kbb
 ;; contract_test.cljs — recap's five declarative planes, checked against each
 ;; other.
 ;;
@@ -59,7 +59,7 @@
 ;;      answer "clean"; that is the failure mode CLAUDE.md's six questions are
 ;;      about.
 ;;
-;; Run: nbb test/contract_test.cljs
+;; Run: kbb --backend sci test/contract_test.cljk
 
 (ns contract-test
   (:require ["node:fs" :as fs]

@@ -28,7 +28,7 @@ are out of scope for a no-network gate.
 ```bash
 git clone git@github.com:cloud-itonami/recap.git
 cd recap/lg-clj
-bb test
+kbb -M:test
 ```
 
 Measured output:
@@ -48,16 +48,16 @@ First run may take a few seconds while babashka resolves git dependencies from
 From `lg-clj/` either form is equivalent:
 
 ```bash
-bb test
+kbb -M:test
 # or
-bb run_tests.clj
+kbb run_tests.cljk
 ```
 
 Both exit non-zero if any assertion fails.
 
 ## Troubleshooting
 
-**`Could not resolve symbol` or missing namespace on first `bb test`**
+**`Could not resolve symbol` or missing namespace on first `kbb -M:test`**
 
 Ensure you are in `lg-clj/` (not the repo root). The babashka project paths are
 declared in `lg-clj/bb.edn`, not at the repository root.

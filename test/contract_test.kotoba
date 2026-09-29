@@ -56,7 +56,7 @@
 ;;   1  a check failed — the report names which fact moved
 ;;   2  REFUSED — a file, anchor or extractor this depends on came back empty,
 ;;      so nothing was measured. A checker that cannot see its input must not
-;;      answer "clean"; that is the failure mode CLAUDE.md's six questions are
+;;      answer "clean"; that is the failure mode AGENTS.md's six questions are
 ;;      about.
 ;;
 ;; Run: kbb --backend sci test/contract_test.cljk
